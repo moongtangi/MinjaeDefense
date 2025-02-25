@@ -4,38 +4,43 @@ using UnityEngine;
 
 public class MonsterMovement : MonoBehaviour
 {
-    public List<Transform> waypoints;  // ¸ó½ºÅÍ°¡ µû¶ó°¥ °æ·Î(¿þÀÌÆ÷ÀÎÆ®µé)
-    private int currentWaypointIndex = 0;  // ÇöÀç ¸ñÇ¥ ¿þÀÌÆ÷ÀÎÆ® ÀÎµ¦½º
+    public GameObject spawnerOBJ;
+    private MonsterSpawner spawner;
 
-    public float moveSpeed = 2f;  // ÀÌµ¿ ¼Óµµ
+    public Vector3[] Lwaypoints = new Vector3[] {
+        new (13.5f, -14.5f), new (13.5f, -9.5f), new (3.5f, -9.5f), new (3.5f, -4.5f), new (16.0f, -4.5f)};
+    private int index = 0;
+    public int moveSpeed = 10;
+    public int monsterType;
 
-    void Update()
+    void Awake()
     {
-        if (waypoints.Count == 0)
-            return;
-
-        // ¸ñÇ¥ ¿þÀÌÆ÷ÀÎÆ®°¡ ÀÖ´Ù¸é ±Û·ç°©´Ï´Ù
-        Transform targetWaypoint = waypoints[currentWaypointIndex];
-
-        // ¸ó½ºÅÍ¸¦ ¸ñÇ¥ ¿þÀÌÆ÷ÀÎÆ® ¹æÇâÀ¸·Î ÀÌµ¿
-        transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, moveSpeed * Time.deltaTime);
-
-        // ¸ñÇ¥ ¿þÀÌÆ÷ÀÎÆ®¿¡ µµ´ÞÇÏ¸é ´ÙÀ½ ¿þÀÌÆ÷ÀÎÆ®·Î
-        if (transform.position == targetWaypoint.position)
-        {
-            currentWaypointIndex++; 
-
-            // ¸ðµç ¿þÀÌÆ÷ÀÎÆ®¸¦ Áö³ª¸é ¸ó½ºÅÍ »èÁ¦
-            if (currentWaypointIndex >= waypoints.Count)
-            {
-                Destroy(gameObject);  // kill
-            }
-        }
+        spawnerOBJ = GameObject.Find("MonsterSpawner");
+        spawner = spawnerOBJ.GetComponent<MonsterSpawner>();
     }
 
-    // ¸ó½ºÅÍ¿¡ °æ·Î¸¦ ¼³Á¤
-    public void SetWaypoints(List<Transform> newWaypoints)
+    void OnEnable()
     {
-        waypoints = newWaypoints;
+        index = 0;
+    }
+
+    void FixedUpdate()
+    {     
+        Vector3 target = Lwaypoints[index];   
+        transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed * Time.deltaTime);
+
+        if (transform.position == target)
+        {
+            index++; 
+            
+            if (index >= Lwaypoints.Length)
+            {
+                if (spawner != null) 
+                {
+                    Debug.Log(monsterType);
+                    spawner.pools[monsterType].Release(this.gameObject);  // í’€ë¡œ ë°˜í™˜
+                }
+            }
+        }
     }
 }

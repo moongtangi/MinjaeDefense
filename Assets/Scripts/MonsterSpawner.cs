@@ -1,52 +1,49 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Pool;
 
 public class MonsterSpawner : MonoBehaviour
 {
-    public GameObject monsterPrefab;  // ¸ó½ºÅÍ ÇÁ¸®ÆÕ
-    public Transform spawnPoint;      // ¸ó½ºÅÍ »ý¼º À§Ä¡ (Transform Å¸ÀÔ)
-    public List<Transform> waypoints;  // ¸ó½ºÅÍ°¡ µû¶ó°¥ ¿þÀÌÆ÷ÀÎÆ® ¸®½ºÆ®
+    public GameObject[] monsterPrefab;
+    public ObjectPool<GameObject>[] pools;
+
+    void Awake()
+    {
+        pools = new ObjectPool<GameObject>[monsterPrefab.Length];
+        for (int i = 0; i < monsterPrefab.Length; i++)
+        {
+            int index = i;
+            // ë‚´ê°€ ë¯¸ì•ˆí•´ ë²„ê·¸ ê³ ì¹˜ëŠë¼ ìƒˆë²½ 5ì‹œ 15ë¶„ì´ ë¼ì„œ ì£¼ì„ ë‚¨ê¸¸ì‹œê°„ì´ ì—†ì–´ :(
+            pools[index] = new ObjectPool<GameObject>(
+                createFunc: () => Instantiate(monsterPrefab[index]),
+                actionOnGet: obj => obj.SetActive(true),
+                actionOnRelease: obj => obj.SetActive(false),
+                actionOnDestroy: obj => Destroy(obj),
+                collectionCheck: false
+            );
+        }
+
+        Debug.Log(pools.Length);
+    }
 
     void Start()
     {
-        if (monsterPrefab == null)
-        {
-            Debug.LogError("¸ó½ºÅÍ ÇÁ¸®ÆÕÀÌ ¿¬°áµÇÁö ¾Ê¾Ò½À´Ï´Ù!");
-            return;
-        }
-
-        if (spawnPoint == null)
-        {
-            Debug.LogError("½ºÆù Æ÷ÀÎÆ®°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù!");
-            return;
-        }
-
-        if (waypoints.Count == 0)
-        {
-            Debug.LogError("¿þÀÌÆ÷ÀÎÆ®°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù!");
-            return;
-        }
-
-        // 1ÃÊ °£°ÝÀ¸·Î ¸ó½ºÅÍ »ý¼º
-        InvokeRepeating("SpawnMonster", 0f, 1f);
+        InvokeRepeating("a", 1f, 1f);
     }
 
-    void SpawnMonster()
+    void a() // ì‹¤í—˜ìš©ìš©
     {
-        if (monsterPrefab != null && spawnPoint != null && waypoints.Count > 0)
-        {
-            GameObject monster = Instantiate(monsterPrefab, spawnPoint.position, Quaternion.identity);  // ¸ó½ºÅÍ »ý¼º
+        SpawnMonster(0);
+    }
 
-            // ¸ó½ºÅÍ¿¡ °æ·Î ¼³Á¤
-            MonsterMovement movementScript = monster.GetComponent<MonsterMovement>();
-            if (movementScript != null)
-            {
-                movementScript.SetWaypoints(waypoints);
-            }
-            else
-            {
-                Debug.LogError("MonsterMovement ÇÁ¸®ÆÕ¾ö½¿");
-            }
+    void SpawnMonster(int x=0)
+    {
+        if (monsterPrefab != null)
+        {
+            GameObject mob = pools[x].Get();
+            mob.transform.position = new Vector2 (-0.5f, -14.5f);
+            mob.GetComponent<MonsterMovement>().monsterType = x;
         }
     }
 }
