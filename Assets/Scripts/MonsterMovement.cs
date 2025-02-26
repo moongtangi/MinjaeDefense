@@ -11,7 +11,8 @@ public class MonsterMovement : MonoBehaviour
         new (13.5f, -14.5f), new (13.5f, -9.5f), new (3.5f, -9.5f), new (3.5f, -4.5f), new (16.0f, -4.5f)};
     private int index = 0;
     public int moveSpeed = 10;
-    public int monsterType;
+    public int monsterType, monsterLorR;
+    public Vector3 target;
 
     void Awake()
     {
@@ -19,27 +20,40 @@ public class MonsterMovement : MonoBehaviour
         spawner = spawnerOBJ.GetComponent<MonsterSpawner>();
     }
 
-    void OnEnable()
+    public void SettingOnEnable()
     {
         index = 0;
+        if (monsterLorR == 0)
+            target = Lwaypoints[index];
+        else
+            target = new Vector3 (32-Lwaypoints[index].x, Lwaypoints[index].y);
+        
+        Debug.Log($"Monster {monsterType} is spawned at {target}, mosterLorR: {monsterLorR}");
     }
 
     void FixedUpdate()
     {     
-        Vector3 target = Lwaypoints[index];   
         transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed * Time.deltaTime);
 
         if (transform.position == target)
         {
-            index++; 
-            
+            index++;
             if (index >= Lwaypoints.Length)
             {
                 if (spawner != null) 
                 {
-                    Debug.Log(monsterType);
-                    spawner.pools[monsterType].Release(this.gameObject);  // 풀로 반환
+                    int poolIndex = 2 * monsterType + monsterLorR;
+                    Debug.Log($"Releasing monster to pool index: {poolIndex}");
+                    spawner.pools[poolIndex].Release(this.gameObject);  // 풀로 반환
+                    spawner.pooledObjects[poolIndex].Remove(this.gameObject); // 활성화 목록에서 제거
                 }
+            }
+            else
+            {
+                if (monsterLorR == 0)
+                    target = Lwaypoints[index];
+                else
+                    target = new Vector3 (32-Lwaypoints[index].x, Lwaypoints[index].y);
             }
         }
     }
